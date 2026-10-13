@@ -18,21 +18,31 @@
 
 ### Libraries
 
+#### Using
+
 - https://github.com/miketeachman/micropython-rotary
-- ssd1306.py copied from Wokwi
+- ssd1306.py copied from ~~Wokwi~~ [Github](https://github.com/micropython/micropython-lib/blob/master/micropython/drivers/display/ssd1306/ssd1306.py)
+
+#### To Look At
+
+- https://github.com/peterhinch/micropython-micro-gui
 
 ### VSCode
 
 - Install VSCode, RT-Thread MicroPython extension
 
-### Syncing code to chip
+### Syncing code to chip (Windows)
 - Single file
-  ```
+
+```
 $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.11\ampy\cli.exe"
 >> & $cli -p COM3 -d 2 put "$PWD\main.py"
   ```
+
 - All files
-  ```
+
+ ```
+
   $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.11\ampy\cli.exe"
   if (-not (Test-Path $cli)) { throw "Uploader not found: $cli" }
 
