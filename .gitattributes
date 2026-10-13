@@ -1,0 +1,16 @@
+# Set the default behavior to automatically normalize line endings
+* text=auto
+
+# Explicitly force LF (Linux) line endings for text files on checkout
+*.js text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.sh text eol=lf
+
+# Explicitly keep CRLF for Windows-specific scripts if you have them
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Denote binary files so Git doesn't touch them
+*.png binary
+*.jpg binary
