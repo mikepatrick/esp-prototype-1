@@ -1,8 +1,7 @@
-from machine import Pin, I2C
+from machine import Pin, I2C, ADC
 import ssd1306
 from rotary_irq_esp import RotaryIRQ
 import time
-import utility
 
 FEATURES = ["Menu", "EQ", "VU", "Standby"]
 FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
@@ -39,6 +38,13 @@ def button_isr(pin):
 
 # Attach the interrupt to look for a falling edge (HIGH to LOW transition when pressed)
 button_pin.irq(trigger=Pin.IRQ_FALLING, handler=button_isr)
+
+# 1. Initialize the ADC on an analog pin (GPIO 34)
+pot = ADC(Pin(34))
+
+# 2. Configure full 3.3V voltage range attenuation
+# This allows the pin to safely read the full range from 0 to 3.3V
+pot.init(atten=ADC.ATTN_11DB)
 
 # LED setup
 error_led = Pin(2, Pin.OUT)
@@ -149,3 +155,13 @@ while True:
 
         # Reset the flag so we don't repeat this block until the next physical press
         button_pressed = False
+
+    # Potentiometer
+    # 3. Read the raw ADC value (returns an integer between 0 and 4095)
+    raw_value = pot.read()
+    
+    # 4. (Optional) Convert the raw value back into actual voltage
+    voltage = raw_value * (3.3 / 4095)
+    
+    # Print results to the console
+    print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")

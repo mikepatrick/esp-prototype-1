@@ -26,6 +26,10 @@ sudo apt install -y code
 
 ### Installing pyenv
 
+Installing pyenv and using a virtualenv is only required if modifying the python installation - i.e. if running `python -m pip install mpremote`
+
+If not using `mpremote`, to push code to the chip, `pyenv` is not required.
+
 Install prerequisites:
 
 ```
@@ -67,3 +71,9 @@ pyenv activate esp-prototype-1
 # Install mpremote into virtualenv
 python -m pip install mpremote
 ```
+
+### Sync code to chip (Linux)
+
+- Sync button in VSCode appears to work, or:
+- `mpremote connect /dev/ttyUSB0 fs cp main.py :main.py`
+- `mpremote connect /dev/ttyUSB0 fs cp *.py :/`
