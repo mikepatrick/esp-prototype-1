@@ -39,7 +39,6 @@ $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.
 >> & $cli -p COM3 -d 2 put "$PWD\main.py"
   ```
 
-- All files
 
  ```
 
@@ -52,6 +51,10 @@ $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.
     if ($LASTEXITCODE -ne 0) { throw "Upload failed: $($_.Name)" }
   }
   ```
+  
+- All Python files
+
+Run **Tasks: Run Task** and select **Copy workspace to MicroPython device**. It uploads workspace `.py` files with one `ampy put` command, which works with standard MicroPython firmware. Close the extension's REPL terminal first so it releases the serial port.
 
 ### Resources
 
