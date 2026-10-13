@@ -97,7 +97,7 @@ def paint_oled(oled, text, x=10, y=10):
 # oled2.write_cmd(0xA0)  # Reverse segment mapping
 # oled2.write_cmd(0xC0)  # Reverse COM scan direction
 oled2.rotate(False)
-paint_oled_1(oled, 'Menu', 10, 10)
+paint_oled_1(oled, FEATURES[0], 10, 10)
 paint_oled(oled2, 'Detail Screen', 10, 10)
 
 while True:

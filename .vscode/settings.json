@@ -22,5 +22,6 @@
     ],
     "files.associations": {
         ".mpyproject.json": "jsonc"
-    }
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell"
 }
