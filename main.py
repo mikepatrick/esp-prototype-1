@@ -5,6 +5,22 @@ import time
 
 FEATURES = ["Menu", "EQ", "VU", "Standby"]
 FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
+
+# Pin assignment summary
+#
+# Pin 2 - Onboard LED and external red indicator LED.  Activated on some errors.
+# Pin 13 - Push button on rotary encoder
+# Pin 15 - External green indicator LED.  Activated when EQ is selected.
+# Pin 17 - External yelow indicator LED.  Activated when VU is selected.
+# Pin 18 - I2C SCL for second OLED display
+# Pin 19 - I2C SDA for second OLED display
+# Pin 21 - I2C SDA for first OLED display
+# Pin 22 - I2C SCL for first OLED display
+# Pin 32 - Rotary encoder CLK pin
+# Pin 33 - Rotary encoder DT pin
+# Pin 34 - Potentiometer analog input pin
+
+
 # Rotary encoder setup
 r = RotaryIRQ(pin_num_clk=32, 
               pin_num_dt=33, 
