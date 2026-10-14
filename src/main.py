@@ -5,8 +5,9 @@ from machine import ADC, I2C, Pin
 
 from lib import ssd1306
 from lib.rotary_irq_esp import RotaryIRQ
-from utility import (configure_rotary_encoder, paint_oled, paint_oled_1,
-                     pot_value_to_vu_display)
+from utility import (configure_rotary_encoder, connect_wifi, load_env,
+                     paint_oled, paint_oled_1, pot_value_to_vu_display,
+                     sync_ntp_time)
 
 FEATURES = ["Menu", "EQ", "VU", "Standby"]
 FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
@@ -34,6 +35,14 @@ DEFAULT_Y = 10
 # Pin 33 - Rotary encoder DT pin
 # Pin 34 - Potentiometer analog input pin
 
+# Load environment variables
+env_vars = load_env(".env")
+
+# Connect to WiFi
+if connect_wifi(env_vars):
+    sync_ntp_time()
+else:
+    print("WiFi connection failed. Skipping NTP time sync.")
 
 # Rotary encoder setup
 rotary_encoder = configure_rotary_encoder(pin_clk=32, pin_dt=33, min_val=0, max_val=3)
