@@ -25,18 +25,22 @@ if (-not (Test-Path -LiteralPath (Join-Path $sourceRoot 'main.py'))) {
     throw 'Expected src\main.py in the workspace.'
 }
 
-$stage = Join-Path $env:TEMP ([guid]::NewGuid().ToString())
-try {
-    New-Item -ItemType Directory -Path $stage | Out-Null
-    Get-ChildItem -LiteralPath $sourceRoot -Force | Copy-Item -Destination $stage -Recurse -Force
-
-    Write-Host "Uploading src contents to $Port with main.py at the filesystem root..."
-    & $cli -p $Port -d 2 put $stage '/'
+foreach ($file in Get-ChildItem -LiteralPath $sourceRoot -Filter '*.py' -File) {
+    $remotePath = '/' + $file.Name
+    Write-Host "Uploading $($file.Name) to $remotePath"
+    & $cli -p $Port -d 2 put $file.FullName $remotePath
     if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
+        throw "Upload failed: $($file.Name)"
     }
-    Write-Host 'Upload complete.'
 }
-finally {
-    Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+
+$libraryRoot = Join-Path $sourceRoot 'lib'
+if (Test-Path -LiteralPath $libraryRoot) {
+    Write-Host 'Uploading src\lib to /lib'
+    & $cli -p $Port -d 2 put $libraryRoot '/lib'
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Upload failed: src\lib'
+    }
 }
+
+Write-Host 'Upload complete.'
