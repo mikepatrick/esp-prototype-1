@@ -106,6 +106,11 @@ oled2.rotate(False)
 paint_oled_1(oled, FEATURES[0], 10, 10)
 paint_oled(oled2, FEATURE_DESCRIPTIONS[0], 10, 10)
 
+prev_pot_value = 0
+draw_pot = False
+eq_selected = False
+vu_selected = False
+vu_display = "VU"
 while True:
     curr_val = r.value()
     
@@ -159,9 +164,32 @@ while True:
     # Potentiometer
     # 3. Read the raw ADC value (returns an integer between 0 and 4095)
     raw_value = pot.read()
-    
+    if raw_value - prev_pot_value > 50 or prev_pot_value - raw_value > 50:
+        prev_pot_value = raw_value
+        draw_pot = True
     # 4. (Optional) Convert the raw value back into actual voltage
-    voltage = raw_value * (3.3 / 4095)
+    # voltage = raw_value * (3.3 / 4095)
     
     # Print results to the console
-    print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
+    # print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
+    if curr_val == 2 and draw_pot:
+        if raw_value > 4000:
+            vu_display = "VU: MAX"
+        elif raw_value > 3500:
+            vu_display = "VU: XXXXXXX"
+        elif raw_value > 3000:
+            vu_display = "VU: XXXXXX"
+        elif raw_value > 2500:
+            vu_display = "VU: XXXXX"
+        elif raw_value > 2000:
+            vu_display = "VU: XXXX"
+        elif raw_value > 1500:
+            vu_display = "VU: XXX"
+        elif raw_value > 1000:
+            vu_display = "VU: XX"
+        elif raw_value > 500:
+            vu_display = "VU: X"
+        else:
+            vu_display = "VU: MIN"
+        paint_oled(oled2, vu_display, 10, 10)
+        draw_pot = False
