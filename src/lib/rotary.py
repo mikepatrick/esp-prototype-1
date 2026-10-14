@@ -125,15 +125,15 @@ class Rotary(object):
         if l not in self._listener:
             raise ValueError('{} is not an installed listener'.format(l))
         self._listener.remove(l)
-        
+
     def _process_rotary_pins(self, pin):
         old_value = self._value
         clk_dt_pins = (self._hal_get_clk_value() <<
                        1) | self._hal_get_dt_value()
-                       
+
         if self._invert:
             clk_dt_pins = ~clk_dt_pins & 0x03
-            
+
         # Determine next state
         if self._half_step:
             self._state = _transition_table_half_step[self._state &

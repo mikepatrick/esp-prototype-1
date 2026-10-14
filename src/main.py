@@ -1,8 +1,10 @@
-from machine import Pin, I2C, ADC
-from lib import ssd1306
-import framebuf
-from lib.rotary_irq_esp import RotaryIRQ
 import time
+
+import framebuf
+from machine import ADC, I2C, Pin
+
+from lib import ssd1306
+from lib.rotary_irq_esp import RotaryIRQ
 from utility import configure_rotary_encoder, paint_oled, paint_oled_1
 
 FEATURES = ["Menu", "EQ", "VU", "Standby"]
@@ -21,6 +23,7 @@ DEFAULT_Y = 10
 # Pin 19 - I2C SDA for second OLED display
 # Pin 21 - I2C SDA for first OLED display
 # Pin 22 - I2C SCL for first OLED display
+# Pin 23 - Push button for second button
 # Pin 32 - Rotary encoder CLK pin
 # Pin 33 - Rotary encoder DT pin
 # Pin 34 - Potentiometer analog input pin
@@ -36,12 +39,18 @@ last_interrupt_time = 0
 
 def button_isr(pin):
     """Interrupt Service Routine triggered when the button is pressed."""
-    global button_pressed, last_interrupt_time
+    global button_pressed, last_interrupt_time, button2_pressed
     current_time = time.ticks_ms()
 
     # Debounce check: ignore signals if they happen within 200ms of each other
     if time.ticks_diff(current_time, last_interrupt_time) > 200:
-        button_pressed = True
+        print(pin, "Button pressed at", current_time)
+        if pin == button_pin:
+            print("pins equal button one")
+            button_pressed = True
+        if pin == button2_pin:
+            print("pins equal button two")
+            button2_pressed = True
         last_interrupt_time = current_time
 
 ## Attach the interrupt to look for a falling edge (HIGH to LOW transition when pressed)
@@ -60,6 +69,10 @@ pot.init(atten=ADC.ATTN_11DB)
 error_led = Pin(2, Pin.OUT)
 indicator_leds = [error_led, Pin(15, Pin.OUT), Pin(17, Pin.OUT)]
 
+# Second button setup
+button2_pin = Pin(23, Pin.IN, Pin.PULL_UP)
+button2_pressed = False
+button2_pin.irq(trigger=Pin.IRQ_FALLING, handler=button_isr)
 # Display setup
 try:
     i2c_1 = I2C(0, scl=Pin(22, Pin.OUT, Pin.PULL_UP), sda=Pin(21, Pin.OUT, Pin.PULL_UP))
@@ -120,7 +133,7 @@ while True:
             led.off()
     time.sleep_ms(50)
 
-    # Handle Button Press (flags raised by the background interrupt)
+    # Handle Encoder Button Press (flags raised by the background interrupt)
     if button_pressed:
         print('Button click detected via Interrupt!')
         # If in standby, wake up and paint displays.
@@ -148,6 +161,15 @@ while True:
     if is_in_standby:
         continue
 
+    # Handle second button press (flags raised by the background interrupt)
+    if button2_pressed:
+        print('Button 2 click detected via Interrupt!')
+        # If in standby, wake up and paint displays.
+        for i, led in enumerate(indicator_leds):
+            led.on()
+
+        # Reset the flag so we don't repeat this block until the next physical press
+        button2_pressed = False
     # Potentiometer
     # 3. Read the raw ADC value (returns an integer between 0 and 4095)
     raw_value = pot.read_u16()

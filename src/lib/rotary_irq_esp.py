@@ -8,9 +8,11 @@
 # Documentation:
 #   https://github.com/MikeTeachman/micropython-rotary
 
-from machine import Pin
-from .rotary import Rotary
 from sys import platform
+
+from machine import Pin
+
+from .rotary import Rotary
 
 _esp8266_deny_pins = [16]
 

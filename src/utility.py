@@ -1,4 +1,6 @@
 from lib.rotary_irq_esp import RotaryIRQ
+
+
 def show_oled1_rotated_90(oled, rot_buf):
 	oled.fill(0)
 	for y in range(128):

@@ -1,7 +1,9 @@
-from machine import Pin, I2C
+import time
+
+from machine import I2C, Pin
+
 from lib import ssd1306
 from lib.rotary_irq_esp import RotaryIRQ
-import time
 
 r = RotaryIRQ(pin_num_clk=32,
               pin_num_dt=33,
