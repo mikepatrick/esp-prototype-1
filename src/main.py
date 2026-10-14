@@ -5,10 +5,16 @@ from machine import ADC, I2C, Pin
 
 from lib import ssd1306
 from lib.rotary_irq_esp import RotaryIRQ
-from utility import configure_rotary_encoder, paint_oled, paint_oled_1
+from utility import (configure_rotary_encoder, paint_oled, paint_oled_1,
+                     pot_value_to_vu_display)
 
 FEATURES = ["Menu", "EQ", "VU", "Standby"]
 FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
+
+MENU_INDEX = 0
+EQ_INDEX = 1
+VU_INDEX = 2
+STANDBY_INDEX = 3
 
 DEFAULT_X = 10
 DEFAULT_Y = 10
@@ -30,16 +36,16 @@ DEFAULT_Y = 10
 
 
 # Rotary encoder setup
-r = configure_rotary_encoder(pin_clk=32, pin_dt=33, min_val=0, max_val=3)
-prev_val = r.value()
+rotary_encoder = configure_rotary_encoder(pin_clk=32, pin_dt=33, min_val=0, max_val=3)
+prev_feature = rotary_encoder.value()
 
 ## Variables and function to manage button state and debouncing
-button_pressed = False
+encoder_button_pressed = False
 last_interrupt_time = 0
 
 def button_isr(pin):
     """Interrupt Service Routine triggered when the button is pressed."""
-    global button_pressed, last_interrupt_time, button2_pressed
+    global encoder_button_pressed, last_interrupt_time, button2_pressed
     current_time = time.ticks_ms()
 
     # Debounce check: ignore signals if they happen within 200ms of each other
@@ -47,7 +53,7 @@ def button_isr(pin):
         print(pin, "Button pressed at", current_time)
         if pin == button_pin:
             print("pins equal button one")
-            button_pressed = True
+            encoder_button_pressed = True
         if pin == button2_pin:
             print("pins equal button two")
             button2_pressed = True
@@ -101,40 +107,40 @@ rot_buf = framebuf.FrameBuffer1(bytearray(64 * 128 // 8), 64, 128)
 oled2.rotate(False)
 
 # Initial display
-paint_oled_1(oled, rot_buf, FEATURES[0], DEFAULT_X, DEFAULT_Y)
-paint_oled(oled2, FEATURE_DESCRIPTIONS[0], DEFAULT_X, DEFAULT_Y)
+paint_oled_1(oled, rot_buf, FEATURES[MENU_INDEX], DEFAULT_X, DEFAULT_Y)
+paint_oled(oled2, FEATURE_DESCRIPTIONS[MENU_INDEX], DEFAULT_X, DEFAULT_Y)
 
 # loop variables
-prev_pot_value = 0
+prev_pot_value = pot.read_u16()
 draw_pot = False
 eq_selected = False
 vu_selected = False
-vu_display = FEATURE_DESCRIPTIONS[2]
+vu_display = FEATURE_DESCRIPTIONS[VU_INDEX]
 is_in_standby = False
 
 # Main logic loop
 while True:
-    curr_val = r.value()
+    selected_feature = rotary_encoder.value()
 
     # Turning encoder selects feature.  Update display 1 if encoder has been turned.
-    if prev_val != curr_val:
-        if curr_val in range(len(FEATURES)):
-            paint_oled_1(oled, rot_buf, FEATURES[curr_val], DEFAULT_X, DEFAULT_Y)
+    if prev_feature != selected_feature:
+        if selected_feature in range(len(FEATURES)):
+            paint_oled_1(oled, rot_buf, FEATURES[selected_feature], DEFAULT_X, DEFAULT_Y)
         else:
-            paint_oled_1(oled, rot_buf, '?: ' + str(curr_val), DEFAULT_X, DEFAULT_Y)
-        prev_val = curr_val
-        print('Feature selector value = ', curr_val)
+            paint_oled_1(oled, rot_buf, '?: ' + str(selected_feature), DEFAULT_X, DEFAULT_Y)
+        prev_feature = selected_feature
+        print('Feature selector value = ', selected_feature)
 
     # Turn on yellow LED if VU is selected, green LED if EQ is selected, and turn off both if neither is selected.
     for i, led in enumerate(indicator_leds):
-        if i == curr_val and i != 0:
+        if i == selected_feature and i != 0:
             led.on()
         else:
             led.off()
     time.sleep_ms(50)
 
     # Handle Encoder Button Press (flags raised by the background interrupt)
-    if button_pressed:
+    if encoder_button_pressed:
         print('Button click detected via Interrupt!')
         # If in standby, wake up and paint displays.
         if is_in_standby:
@@ -142,22 +148,22 @@ while True:
             oled.poweron()
             oled2.poweron()
             is_in_standby = False
-            paint_oled_1(oled, rot_buf, FEATURES[curr_val], DEFAULT_X, DEFAULT_Y)
-            paint_oled(oled2, FEATURE_DESCRIPTIONS[curr_val], DEFAULT_X, DEFAULT_Y)
+            paint_oled_1(oled, rot_buf, FEATURES[selected_feature], DEFAULT_X, DEFAULT_Y)
+            paint_oled(oled2, FEATURE_DESCRIPTIONS[selected_feature], DEFAULT_X, DEFAULT_Y)
         # If not in standby, check if standby is selected.  If so, power off displays and enter standby.
         # Otherwise, update display 2 with the description of the selected feature.
         else:
-            if curr_val == 3:
+            if selected_feature == STANDBY_INDEX:
                 oled.poweroff()
                 oled2.poweroff()
                 is_in_standby = True
             else:
-                paint_oled(oled2, FEATURE_DESCRIPTIONS[curr_val], DEFAULT_X, DEFAULT_Y)
+                paint_oled(oled2, FEATURE_DESCRIPTIONS[selected_feature], DEFAULT_X, DEFAULT_Y)
 
         # Reset the flag so we don't repeat this block until the next physical press
-        button_pressed = False
+        encoder_button_pressed = False
 
-    # Don't bother reading the potentiometer if we are in standby
+    # Don't bother reading other sensors if we are in standby
     if is_in_standby:
         continue
 
@@ -181,25 +187,9 @@ while True:
     # Print results to the console
     # print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
 
-    if curr_val == 2 and draw_pot:
-        if raw_value > 60000:
-            vu_display = "VU: MAX"
-        elif raw_value > 50000:
-            vu_display = "VU: XXXXXXX"
-        elif raw_value > 40000:
-            vu_display = "VU: XXXXXX"
-        elif raw_value > 30000:
-            vu_display = "VU: XXXXX"
-        elif raw_value > 20000:
-            vu_display = "VU: XXXX"
-        elif raw_value > 15000:
-            vu_display = "VU: XXX"
-        elif raw_value > 10000:
-            vu_display = "VU: XX"
-        elif raw_value > 5000:
-            vu_display = "VU: X"
-        else:
-            vu_display = "VU: MIN"
-        FEATURE_DESCRIPTIONS[2] = vu_display
+    if selected_feature == VU_INDEX and draw_pot:
+        # Update VU detail display based on potentiometer value.
+        vu_display = pot_value_to_vu_display(raw_value)
+        FEATURE_DESCRIPTIONS[VU_INDEX] = vu_display
         paint_oled(oled2, vu_display, DEFAULT_X, DEFAULT_Y)
         draw_pot = False

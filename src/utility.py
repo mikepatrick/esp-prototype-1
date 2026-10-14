@@ -38,4 +38,24 @@ def configure_rotary_encoder(pin_clk, pin_dt, min_val=0, max_val=3):
                   range_mode=RotaryIRQ.RANGE_WRAP)
     return r
 
-
+def pot_value_to_vu_display(raw_value):
+	"""Convert a potentiometer value to a VU display string."""
+	if raw_value > 60000:
+		vu_display = "VU: MAX"
+	elif raw_value > 50000:
+		vu_display = "VU: XXXXXXX"
+	elif raw_value > 40000:
+		vu_display = "VU: XXXXXX"
+	elif raw_value > 30000:
+		vu_display = "VU: XXXXX"
+	elif raw_value > 20000:
+		vu_display = "VU: XXXX"
+	elif raw_value > 15000:
+		vu_display = "VU: XXX"
+	elif raw_value > 10000:
+		vu_display = "VU: XX"
+	elif raw_value > 5000:
+		vu_display = "VU: X"
+	else:
+		vu_display = "VU: MIN"
+	return vu_display
