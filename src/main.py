@@ -105,14 +105,8 @@ while True:
 
     # Turning encoder selects feature.  Update display 1 if encoder has been turned.
     if prev_val != curr_val:
-        if curr_val == 0:
-            paint_oled_1(oled, rot_buf, FEATURES[0], DEFAULT_X, DEFAULT_Y)
-        elif curr_val == 1:
-            paint_oled_1(oled, rot_buf, FEATURES[1], DEFAULT_X, DEFAULT_Y)
-        elif curr_val == 2:
-            paint_oled_1(oled, rot_buf, FEATURES[2], DEFAULT_X, DEFAULT_Y)
-        elif curr_val == 3:
-            paint_oled_1(oled, rot_buf, FEATURES[3], DEFAULT_X, DEFAULT_Y)
+        if curr_val in range(len(FEATURES)):
+            paint_oled_1(oled, rot_buf, FEATURES[curr_val], DEFAULT_X, DEFAULT_Y)
         else:
             paint_oled_1(oled, rot_buf, '?: ' + str(curr_val), DEFAULT_X, DEFAULT_Y)
         prev_val = curr_val
@@ -166,23 +160,24 @@ while True:
     # print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
 
     if curr_val == 2 and draw_pot:
-        if raw_value > 4000:
+        if raw_value > 60000:
             vu_display = "VU: MAX"
-        elif raw_value > 3500:
+        elif raw_value > 50000:
             vu_display = "VU: XXXXXXX"
-        elif raw_value > 3000:
+        elif raw_value > 40000:
             vu_display = "VU: XXXXXX"
-        elif raw_value > 2500:
+        elif raw_value > 30000:
             vu_display = "VU: XXXXX"
-        elif raw_value > 2000:
+        elif raw_value > 20000:
             vu_display = "VU: XXXX"
-        elif raw_value > 1500:
+        elif raw_value > 15000:
             vu_display = "VU: XXX"
-        elif raw_value > 1000:
+        elif raw_value > 10000:
             vu_display = "VU: XX"
-        elif raw_value > 500:
+        elif raw_value > 5000:
             vu_display = "VU: X"
         else:
             vu_display = "VU: MIN"
-        # paint_oled(oled2, vu_display, DEFAULT_X, DEFAULT_Y)
+        FEATURE_DESCRIPTIONS[2] = vu_display
+        paint_oled(oled2, vu_display, DEFAULT_X, DEFAULT_Y)
         draw_pot = False
