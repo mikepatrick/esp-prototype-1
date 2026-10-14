@@ -21,7 +21,7 @@
 #### Using
 
 - https://github.com/miketeachman/micropython-rotary
-- ssd1306.py copied from ~~Wokwi~~ [Github](https://github.com/micropython/micropython-lib/blob/master/micropython/drivers/display/ssd1306/ssd1306.py)
+- `src/lib/ssd1306.py` copied from ~~Wokwi~~ [Github](https://github.com/micropython/micropython-lib/blob/master/micropython/drivers/display/ssd1306/ssd1306.py)
 
 #### To Look At
 

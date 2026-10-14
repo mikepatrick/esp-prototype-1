@@ -1,10 +1,15 @@
 from machine import Pin, I2C, ADC
-import ssd1306
-from rotary_irq_esp import RotaryIRQ
+from lib import ssd1306
+import framebuf
+from lib.rotary_irq_esp import RotaryIRQ
 import time
+from utility import configure_rotary_encoder, paint_oled, paint_oled_1
 
 FEATURES = ["Menu", "EQ", "VU", "Standby"]
 FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
+
+DEFAULT_X = 10
+DEFAULT_Y = 10
 
 # Pin assignment summary
 #
@@ -22,172 +27,144 @@ FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
 
 
 # Rotary encoder setup
-r = RotaryIRQ(pin_num_clk=32, 
-              pin_num_dt=33, 
-              min_val=0, 
-              max_val=3, 
-              reverse=False,
-              pull_up=True,
-              range_mode=RotaryIRQ.RANGE_WRAP)
-
+r = configure_rotary_encoder(pin_clk=32, pin_dt=33, min_val=0, max_val=3)
 prev_val = r.value()
 
-# --- 2. SETUP ENCODERPUSH BUTTON WITH INTERRUPT ---
-button_pin = Pin(13, Pin.IN, Pin.PULL_UP)
-
-# Variables to manage button state and debouncing
+## Variables and function to manage button state and debouncing
 button_pressed = False
 last_interrupt_time = 0
-
-# Variable to manage standby state
-is_in_standby = False
 
 def button_isr(pin):
     """Interrupt Service Routine triggered when the button is pressed."""
     global button_pressed, last_interrupt_time
     current_time = time.ticks_ms()
-    
+
     # Debounce check: ignore signals if they happen within 200ms of each other
     if time.ticks_diff(current_time, last_interrupt_time) > 200:
         button_pressed = True
         last_interrupt_time = current_time
 
-# Attach the interrupt to look for a falling edge (HIGH to LOW transition when pressed)
+## Attach the interrupt to look for a falling edge (HIGH to LOW transition when pressed)
+button_pin = Pin(13, Pin.IN, Pin.PULL_UP)
 button_pin.irq(trigger=Pin.IRQ_FALLING, handler=button_isr)
 
-# 1. Initialize the ADC on an analog pin (GPIO 34)
+# Potentiometer setup
+## 1. Initialize the ADC on an analog pin (GPIO 34)
 pot = ADC(Pin(34))
 
-# 2. Configure full 3.3V voltage range attenuation
-# This allows the pin to safely read the full range from 0 to 3.3V
+## 2. Configure full 3.3V voltage range attenuation
+## This allows the pin to safely read the full range from 0 to 3.3V
 pot.init(atten=ADC.ATTN_11DB)
 
 # LED setup
 error_led = Pin(2, Pin.OUT)
 indicator_leds = [error_led, Pin(15, Pin.OUT), Pin(17, Pin.OUT)]
 
-# ESP32 Pin assignment 
-i2c_1 = I2C(0, scl=Pin(22, Pin.OUT, Pin.PULL_UP), sda=Pin(21, Pin.OUT, Pin.PULL_UP))
+# Display setup
 try:
+    i2c_1 = I2C(0, scl=Pin(22, Pin.OUT, Pin.PULL_UP), sda=Pin(21, Pin.OUT, Pin.PULL_UP))
     i2c_2 = I2C(1, scl=Pin(18), sda=Pin(19))
 except:
-    print("Oh, fuck")
+    print("Error creating I2C objects.  Check pin assignments and wiring.")
     error_led.on()
     raise
+
 oled_width = 128
 oled_1_height = 64
 oled_2_height = 32
 time.sleep_ms(100)
-oled = ssd1306.SSD1306_I2C(oled_width, oled_1_height, i2c_1)
-time.sleep_ms(100)
+
 try:
+    oled = ssd1306.SSD1306_I2C(oled_width, oled_1_height, i2c_1)
+    time.sleep_ms(100)
     oled2 = ssd1306.SSD1306_I2C(oled_width, oled_2_height, i2c_2)
 except:
-    print("ah, shit")
+    print("Error creating OLED objects.  Check I2C setup and wiring.")
     print(str(i2c_2))
+    raise
 
-import framebuf
 rot_buf = framebuf.FrameBuffer1(bytearray(64 * 128 // 8), 64, 128)
 
-def show_oled1_rotated_90():
-    oled.fill(0)
-    for y in range(128):
-        for x in range(64):
-            oled.pixel(127 - y, x, rot_buf.pixel(x, y))
-    oled.show()
-
-def show_oled1_rotated_270():
-    oled.fill(0)
-    for y in range(128):
-        for x in range(64):
-            oled.pixel(y, 63 - x, rot_buf.pixel(x, y))
-    oled.show()
-
-def paint_oled_1(oled, text, x=10, y=10):
-    """Helper function to paint text on the OLED screen."""
-    rot_buf.fill(0)
-    rot_buf.text(text, x, y)
-    show_oled1_rotated_270()
-
-def paint_oled(oled, text, x=10, y=10):
-    """Helper function to paint text on the OLED screen."""
-    oled.fill(0)
-    oled.text(text, x, y)
-    oled.show()
-
-# Rotete screen 2 180 degrees
-# oled2.write_cmd(0xA0)  # Reverse segment mapping
-# oled2.write_cmd(0xC0)  # Reverse COM scan direction
 oled2.rotate(False)
-paint_oled_1(oled, FEATURES[0], 10, 10)
-paint_oled(oled2, FEATURE_DESCRIPTIONS[0], 10, 10)
 
+# Initial display
+paint_oled_1(oled, rot_buf, FEATURES[0], DEFAULT_X, DEFAULT_Y)
+paint_oled(oled2, FEATURE_DESCRIPTIONS[0], DEFAULT_X, DEFAULT_Y)
+
+# loop variables
 prev_pot_value = 0
 draw_pot = False
 eq_selected = False
 vu_selected = False
-vu_display = "VU"
+vu_display = FEATURE_DESCRIPTIONS[2]
+is_in_standby = False
+
+# Main logic loop
 while True:
     curr_val = r.value()
-    
+
+    # Turning encoder selects feature.  Update display 1 if encoder has been turned.
     if prev_val != curr_val:
         if curr_val == 0:
-            paint_oled_1(oled, FEATURES[0], 10, 10)
+            paint_oled_1(oled, rot_buf, FEATURES[0], DEFAULT_X, DEFAULT_Y)
         elif curr_val == 1:
-            paint_oled_1(oled, FEATURES[1], 10, 10)
+            paint_oled_1(oled, rot_buf, FEATURES[1], DEFAULT_X, DEFAULT_Y)
         elif curr_val == 2:
-            paint_oled_1(oled, FEATURES[2], 10, 10)
+            paint_oled_1(oled, rot_buf, FEATURES[2], DEFAULT_X, DEFAULT_Y)
         elif curr_val == 3:
-            paint_oled_1(oled, FEATURES[3], 10, 10)
+            paint_oled_1(oled, rot_buf, FEATURES[3], DEFAULT_X, DEFAULT_Y)
         else:
-            paint_oled_1(oled, '?: ' + str(curr_val), 10, 10)
+            paint_oled_1(oled, rot_buf, '?: ' + str(curr_val), DEFAULT_X, DEFAULT_Y)
         prev_val = curr_val
-        print('result =', curr_val)
+        print('Feature selector value = ', curr_val)
+
+    # Turn on yellow LED if VU is selected, green LED if EQ is selected, and turn off both if neither is selected.
     for i, led in enumerate(indicator_leds):
         if i == curr_val and i != 0:
             led.on()
         else:
             led.off()
     time.sleep_ms(50)
+
     # Handle Button Press (flags raised by the background interrupt)
     if button_pressed:
         print('Button click detected via Interrupt!')
-        
-        # Flash visual feedback on the OLED screen
-        # oled.fill(0)
-        # oled.text('CLICK DETECTED!', 10, 10)
-        # oled.text('Current Val: ' + str(curr_val), 10, 30)
-        # oled.show()
-
+        # If in standby, wake up and paint displays.
         if is_in_standby:
             # If we are in standby, wake up the system
             oled.poweron()
             oled2.poweron()
             is_in_standby = False
-            paint_oled_1(oled, FEATURES[curr_val], 10, 10)
-            paint_oled(oled2, FEATURE_DESCRIPTIONS[curr_val], 10, 10)
+            paint_oled_1(oled, rot_buf, FEATURES[curr_val], DEFAULT_X, DEFAULT_Y)
+            paint_oled(oled2, FEATURE_DESCRIPTIONS[curr_val], DEFAULT_X, DEFAULT_Y)
+        # If not in standby, check if standby is selected.  If so, power off displays and enter standby.
+        # Otherwise, update display 2 with the description of the selected feature.
         else:
             if curr_val == 3:
                 oled.poweroff()
                 oled2.poweroff()
                 is_in_standby = True
             else:
-                paint_oled(oled2, FEATURE_DESCRIPTIONS[curr_val], 10, 10)
+                paint_oled(oled2, FEATURE_DESCRIPTIONS[curr_val], DEFAULT_X, DEFAULT_Y)
 
         # Reset the flag so we don't repeat this block until the next physical press
         button_pressed = False
 
+    # Don't bother reading the potentiometer if we are in standby
+    if is_in_standby:
+        continue
+
     # Potentiometer
     # 3. Read the raw ADC value (returns an integer between 0 and 4095)
-    raw_value = pot.read()
+    raw_value = pot.read_u16()
     if raw_value - prev_pot_value > 50 or prev_pot_value - raw_value > 50:
         prev_pot_value = raw_value
         draw_pot = True
     # 4. (Optional) Convert the raw value back into actual voltage
     # voltage = raw_value * (3.3 / 4095)
-    
     # Print results to the console
     # print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
+
     if curr_val == 2 and draw_pot:
         if raw_value > 4000:
             vu_display = "VU: MAX"
@@ -207,5 +184,5 @@ while True:
             vu_display = "VU: X"
         else:
             vu_display = "VU: MIN"
-        paint_oled(oled2, vu_display, 10, 10)
+        # paint_oled(oled2, vu_display, DEFAULT_X, DEFAULT_Y)
         draw_pot = False

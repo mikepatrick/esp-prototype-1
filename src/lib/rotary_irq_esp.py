@@ -9,7 +9,7 @@
 #   https://github.com/MikeTeachman/micropython-rotary
 
 from machine import Pin
-from rotary import Rotary
+from .rotary import Rotary
 from sys import platform
 
 _esp8266_deny_pins = [16]
@@ -74,4 +74,3 @@ class RotaryIRQ(Rotary):
 
     def _hal_close(self):
         self._hal_disable_irq()
-        

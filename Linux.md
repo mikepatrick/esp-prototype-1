@@ -3,7 +3,7 @@
 Ubuntu locks down serial connections by default.  Add user to appropriate group to allow connection to `ttyusb0`.
 
 ```
-sudo usermod -aG dialout $USER 
+sudo usermod -aG dialout $USER
 ```
 
 ### Installing VSCode
@@ -75,5 +75,4 @@ python -m pip install mpremote
 ### Sync code to chip (Linux)
 
 - Sync button in VSCode appears to work, or:
-- `mpremote connect /dev/ttyUSB0 fs cp main.py :main.py`
-- `mpremote connect /dev/ttyUSB0 fs cp *.py :/`
+- `mpremote connect /dev/ttyUSB0 fs cp src/main.py :main.py + fs cp src/utility.py :utility.py + fs cp -r src/lib/ :`
