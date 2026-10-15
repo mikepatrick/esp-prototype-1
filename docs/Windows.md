@@ -16,7 +16,7 @@
   - Verify: `ssh -T git@github.com`
 
 ### Syncing code to chip (Windows)
-- Single file
+- Single file (ampy)
 
 ```
 $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.11\ampy\cli.exe"
@@ -24,6 +24,31 @@ $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.
 & $cli -p COM3 -d 2 put "$PWD\src\main.py" "/main.py"
 ```
 
-- All source files (VS Code task)
+- All files (mpremote)
 
-Run **Tasks: Run Task** and select **Push Code (Windows)**. The task copies the contents of `src` to the device root, so `main.py` stays at `/main.py` and libraries remain under `/lib`. Close the REPL terminal first so it releases the serial port.
+- `mpremote connect COM3 fs cp src/main.py :main.py + fs cp src/utility.py :utility.py + fs cp -r src/lib/ :`
+
+### Pyenv
+
+- Install using admin powershell window
+
+```
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"
+```
+
+- 3.14.8 not available on windows for some reason?  `pyenv update` threw error.
+- `pyenv install 3.14.5`
+- `pyenv global 3.14.5`
+
+- Create virtualenv: `python -m venv .venv`
+- Activate virtualenv: `.\.venv\Scripts\Activate.ps1`
+- Install `mpremote`: `python -m pip install mpremote`
+
+### Terminal commands and shortcuts
+
+#### Rt-Thread MicroPython REPL
+
+- `CTRL-D` - soft reset
+- `CTRL-]` - exit and release COM port
+- `CTRL-C` - send interrupt
