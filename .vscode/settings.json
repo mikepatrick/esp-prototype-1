@@ -37,5 +37,20 @@
         "source.fixAll": "explicit"
     },
     "pythonTestExplorer.testFramework": "pytest",
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    // "python.autoComplete.extraPaths": [
+    //     "c:/Users/mike/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion"
+    // ],
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none"
+    },
+    "python.terminal.activateEnvironment": false,
+    "micropico.openOnStart": false,
+    "micropico.autoConnect": false,
+    "python.analysis.typeshedPaths": [
+        "./.venv/Lib/site-packages/"
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

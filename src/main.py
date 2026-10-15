@@ -201,10 +201,9 @@ while True:
         prev_pot_value = raw_value
         draw_pot = True
     # 4. (Optional) Convert the raw value back into actual voltage
-    # voltage = raw_value * (3.3 / 4095)
+    # voltage = raw_value * (3.3 / 65536)
     # Print results to the console
     # print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
-
     if pushed_into_feature == VU_INDEX and draw_pot:
         # Update VU detail display based on potentiometer value.
         vu_display = pot_value_to_vu_display(raw_value)
