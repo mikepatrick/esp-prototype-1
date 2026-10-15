@@ -5,20 +5,24 @@ from machine import ADC, I2C, Pin
 
 from lib import ssd1306
 from lib.rotary_irq_esp import RotaryIRQ
-from utility import (configure_rotary_encoder, connect_wifi, load_env,
-                     paint_oled, paint_oled_1, pot_value_to_vu_display,
+from utility import (configure_rotary_encoder, connect_wifi,
+                     get_time_and_date_strings, load_env, paint_oled,
+                     paint_oled_1, paint_oled_list, pot_value_to_vu_display,
                      sync_ntp_time)
 
-FEATURES = ["Menu", "EQ", "VU", "Standby"]
-FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Standby"]
+FEATURES = ["Menu", "EQ", "VU", "Clock", "Standby"]
+FEATURE_DESCRIPTIONS= ["Detail Screen", "Equalizer", "VU Meter", "Clock", "Standby"]
 
 MENU_INDEX = 0
 EQ_INDEX = 1
 VU_INDEX = 2
-STANDBY_INDEX = 3
+CLOCK_INDEX = 3
+STANDBY_INDEX = 4
 
 DEFAULT_X = 10
 DEFAULT_Y = 10
+
+UTC_OFFSET = -5  # Adjust for your timezone (e.g., UTC-5 for CDT, UTC-6 for CST)
 
 # Pin assignment summary
 #
@@ -47,8 +51,6 @@ else:
 # Rotary encoder setup
 rotary_encoder = configure_rotary_encoder(pin_clk=32, pin_dt=33, min_val=0, max_val=3)
 prev_feature = rotary_encoder.value()
-
-## Variables and function to manage button state and debouncing
 encoder_button_pressed = False
 last_interrupt_time = 0
 
@@ -61,10 +63,8 @@ def button_isr(pin):
     if time.ticks_diff(current_time, last_interrupt_time) > 200:
         print(pin, "Button pressed at", current_time)
         if pin == button_pin:
-            print("pins equal button one")
             encoder_button_pressed = True
         if pin == button2_pin:
-            print("pins equal button two")
             button2_pressed = True
         last_interrupt_time = current_time
 
@@ -82,7 +82,10 @@ pot.init(atten=ADC.ATTN_11DB)
 
 # LED setup
 error_led = Pin(2, Pin.OUT)
-indicator_leds = [error_led, Pin(15, Pin.OUT), Pin(17, Pin.OUT)]
+indicator_leds = [
+    error_led, # red
+    Pin(15, Pin.OUT), # green
+    Pin(17, Pin.OUT)] # yellow
 
 # Second button setup
 button2_pin = Pin(23, Pin.IN, Pin.PULL_UP)
@@ -108,7 +111,6 @@ try:
     oled2 = ssd1306.SSD1306_I2C(oled_width, oled_2_height, i2c_2)
 except:
     print("Error creating OLED objects.  Check I2C setup and wiring.")
-    print(str(i2c_2))
     raise
 
 rot_buf = framebuf.FrameBuffer1(bytearray(64 * 128 // 8), 64, 128)
@@ -126,6 +128,7 @@ eq_selected = False
 vu_selected = False
 vu_display = FEATURE_DESCRIPTIONS[VU_INDEX]
 is_in_standby = False
+pushed_into_feature = MENU_INDEX  # Start in the menu feature, which is index 0
 
 # Main logic loop
 while True:
@@ -151,6 +154,8 @@ while True:
     # Handle Encoder Button Press (flags raised by the background interrupt)
     if encoder_button_pressed:
         print('Button click detected via Interrupt!')
+        pushed_into_feature = selected_feature
+        print('Pushed into feature = ', pushed_into_feature)
         # If in standby, wake up and paint displays.
         if is_in_standby:
             # If we are in standby, wake up the system
@@ -179,12 +184,14 @@ while True:
     # Handle second button press (flags raised by the background interrupt)
     if button2_pressed:
         print('Button 2 click detected via Interrupt!')
-        # If in standby, wake up and paint displays.
         for i, led in enumerate(indicator_leds):
             led.on()
-
+            time.sleep_ms(400)
+        time.sleep_ms(400)
         # Reset the flag so we don't repeat this block until the next physical press
         button2_pressed = False
+        # Eject from main logic loop to REPL
+        raise Exception("Button 2 invoking error handler")
     # Potentiometer
     # 3. Read the raw ADC value (returns an integer between 0 and 4095)
     raw_value = pot.read_u16()
@@ -196,9 +203,15 @@ while True:
     # Print results to the console
     # print(f"Raw Value: {raw_value} | Voltage: {voltage:.2f}V")
 
-    if selected_feature == VU_INDEX and draw_pot:
+    if pushed_into_feature == VU_INDEX and draw_pot:
         # Update VU detail display based on potentiometer value.
         vu_display = pot_value_to_vu_display(raw_value)
         FEATURE_DESCRIPTIONS[VU_INDEX] = vu_display
         paint_oled(oled2, vu_display, DEFAULT_X, DEFAULT_Y)
         draw_pot = False
+
+    if pushed_into_feature == CLOCK_INDEX:
+        time_str, date_str = get_time_and_date_strings(UTC_OFFSET)
+        FEATURE_DESCRIPTIONS[CLOCK_INDEX] = time_str
+        paint_oled_list(oled2, [time_str, date_str], DEFAULT_X, DEFAULT_Y)
+        time.sleep(1)
