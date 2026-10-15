@@ -187,6 +187,8 @@ while True:
         for i, led in enumerate(indicator_leds):
             led.on()
             time.sleep_ms(400)
+            led.off()
+        error_led.on()
         time.sleep_ms(400)
         # Reset the flag so we don't repeat this block until the next physical press
         button2_pressed = False

@@ -26,7 +26,7 @@ $cli = "$env:USERPROFILE\.vscode\extensions\rt-thread.rt-thread-micropython-1.0.
 
 - All files (mpremote)
 
-- `mpremote connect COM3 fs cp src/main.py :main.py + fs cp src/utility.py :utility.py + fs cp -r src/lib/ :`
+- `mpremote connect COM3 fs cp src/main.py :main.py + fs cp src/utility.py :utility.py + fs cp -r src/lib/ : + fs cp .env :.env`
 
 ### Pyenv
 

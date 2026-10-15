@@ -75,4 +75,4 @@ python -m pip install mpremote
 ### Sync code to chip (Linux)
 
 - Sync button in VSCode appears to work, or:
-- `mpremote connect /dev/ttyUSB0 fs cp src/main.py :main.py + fs cp src/utility.py :utility.py + fs cp -r src/lib/ :`
+- `mpremote connect /dev/ttyUSB0 fs cp src/main.py :main.py + fs cp src/utility.py :utility.py + fs cp -r src/lib/ : + fs cp .env :.env`
