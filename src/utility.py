@@ -35,6 +35,13 @@ def paint_oled(oled: ssd1306.SSD1306_I2C, text: str, x: int = 10, y: int = 10):
 	oled.text(text, x, y)
 	oled.show()
 
+def paint_oled_list(oled: ssd1306.SSD1306_I2C, text: list[str], x: int = 10, y: int = 10):
+	"""Write text to an OLED display."""
+	oled.fill(0)
+	for i, line in enumerate(text):
+		oled.text(line, x, y + (i * 10))  # Adjust line spacing as needed
+	oled.show()
+
 def configure_rotary_encoder(pin_clk: int, pin_dt: int, min_val: int = 0, max_val: int = 3) -> RotaryIRQ:
     """Configure a rotary encoder with the specified parameters."""
     r = RotaryIRQ(pin_num_clk=pin_clk,
@@ -118,3 +125,14 @@ def sync_ntp_time():
         print("Time synchronized successfully!")
     except Exception as e:
         print("Failed to sync NTP time:", e)
+
+def get_time_and_date_strings(utc_offset_hours: int = 0) -> tuple[str, str]:
+	"""Returns the current time and date as formatted strings, adjusted for the specified UTC offset."""
+	current_time = time.time()
+	local_time = current_time + (utc_offset_hours * 3600)  # Adjust for your timezone
+	local_tuple = time.localtime(local_time)
+	print(local_tuple)
+	year, month, day, hour, minute, second, weekday, yearday = local_tuple[0:8]
+	time_str = f"{hour:02d}:{minute:02d}:{second:02d}"
+	date_str = f"{year}-{month:02d}-{day:02d}"
+	return time_str, date_str
