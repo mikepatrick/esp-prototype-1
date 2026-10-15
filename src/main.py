@@ -43,12 +43,14 @@ UTC_OFFSET = -5  # Adjust for your timezone (e.g., UTC-5 for CDT, UTC-6 for CST)
 env_vars = load_env(".env")
 
 # Connect to WiFi
+print("Initializing Network...")
 if connect_wifi(env_vars):
     sync_ntp_time()
 else:
     print("WiFi connection failed. Skipping NTP time sync.")
 
 # Rotary encoder setup
+print("Configuring rotary encoder")
 rotary_encoder = configure_rotary_encoder(pin_clk=32, pin_dt=33, min_val=0, max_val=3)
 prev_feature = rotary_encoder.value()
 encoder_button_pressed = False
@@ -73,6 +75,7 @@ button_pin = Pin(13, Pin.IN, Pin.PULL_UP)
 button_pin.irq(trigger=Pin.IRQ_FALLING, handler=button_isr)
 
 # Potentiometer setup
+print("Configuring potentiometer...")
 ## 1. Initialize the ADC on an analog pin (GPIO 34)
 pot = ADC(Pin(34))
 
@@ -81,6 +84,7 @@ pot = ADC(Pin(34))
 pot.init(atten=ADC.ATTN_11DB)
 
 # LED setup
+print("Configuring LEDs...")
 error_led = Pin(2, Pin.OUT)
 indicator_leds = [
     error_led, # red
@@ -88,10 +92,13 @@ indicator_leds = [
     Pin(17, Pin.OUT)] # yellow
 
 # Second button setup
+print("Configuring external button...")
 button2_pin = Pin(23, Pin.IN, Pin.PULL_UP)
 button2_pressed = False
 button2_pin.irq(trigger=Pin.IRQ_FALLING, handler=button_isr)
+
 # Display setup
+print("Configuring displays...")
 try:
     i2c_1 = I2C(0, scl=Pin(22, Pin.OUT, Pin.PULL_UP), sda=Pin(21, Pin.OUT, Pin.PULL_UP))
     i2c_2 = I2C(1, scl=Pin(18), sda=Pin(19))
@@ -116,6 +123,8 @@ except:
 rot_buf = framebuf.FrameBuffer1(bytearray(64 * 128 // 8), 64, 128)
 
 oled2.rotate(False)
+
+print("Sensors configured.")
 
 # Initial display
 paint_oled_1(oled, rot_buf, FEATURES[MENU_INDEX], DEFAULT_X, DEFAULT_Y)
