@@ -1,3 +1,4 @@
 .env
 .venv/
+typings/
 .vscode/settings.json
