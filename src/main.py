@@ -43,7 +43,7 @@ UTC_OFFSET = -5  # Adjust for your timezone (e.g., UTC-5 for CDT, UTC-6 for CST)
 env_vars = load_env(".env")
 
 # Connect to WiFi
-if env_vars.get("WIFI_ENABLED", None) and env_vars.get("WIFI_ENABLED", "").upper() == "True":
+if env_vars.get("WIFI_ENABLED", None) and env_vars.get("WIFI_ENABLED", "").upper() == "TRUE":
     print("Initializing Network...")
     if connect_wifi(env_vars):
         sync_ntp_time()
