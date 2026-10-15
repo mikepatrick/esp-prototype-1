@@ -43,11 +43,14 @@ UTC_OFFSET = -5  # Adjust for your timezone (e.g., UTC-5 for CDT, UTC-6 for CST)
 env_vars = load_env(".env")
 
 # Connect to WiFi
-print("Initializing Network...")
-if connect_wifi(env_vars):
-    sync_ntp_time()
+if env_vars.get("WIFI_ENABLED", None) and env_vars.get("WIFI_ENABLED", "").upper() == "True":
+    print("Initializing Network...")
+    if connect_wifi(env_vars):
+        sync_ntp_time()
+    else:
+        print("WiFi connection failed. Skipping NTP time sync.")
 else:
-    print("WiFi connection failed. Skipping NTP time sync.")
+    print("WIFI_ENABLED not set to 'true'. Skipping network initialization and time sync.")
 
 # Rotary encoder setup
 print("Configuring rotary encoder")
@@ -204,9 +207,9 @@ while True:
         # Eject from main logic loop to REPL
         raise Exception("Button 2 invoking error handler")
     # Potentiometer
-    # 3. Read the raw ADC value (returns an integer between 0 and 4095)
+    # 3. Read the raw ADC value (returns an integer between 0 and 65536)
     raw_value = pot.read_u16()
-    if raw_value - prev_pot_value > 50 or prev_pot_value - raw_value > 50:
+    if raw_value - prev_pot_value > 500 or prev_pot_value - raw_value > 500:
         prev_pot_value = raw_value
         draw_pot = True
     # 4. (Optional) Convert the raw value back into actual voltage
