@@ -1,0 +1,37 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Attach to MicroPython",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "192.168.4.34",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "description": "Rule 1: Direct link to the external mp_debugpy repository path reported by the chip",
+                    "localRoot": "/home/mike/workspace/mp_debugpy",
+                    "remoteRoot": "/home/mike/workspace/mp_debugpy"
+                },
+                {
+                    "description": "Rule 2: Flat fallback for your project src folder to find main.py",
+                    "localRoot": "${workspaceFolder}/src/",
+                    "remoteRoot": ""
+                }
+            ],
+            "justMyCode": true
+        }
+    ]
+}

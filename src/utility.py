@@ -95,7 +95,7 @@ def load_env(filepath: str = ".env") -> dict[str, str]:
         print(f"Warning: {filepath} file not found.")
     return env_vars
 
-def connect_wifi(env_vars: dict[str, str]) -> bool:
+def connect_wifi(env_vars: dict[str, str]) -> network.WLAN | None:
     """Connects the ESP32 to the local Wi-Fi network."""
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
@@ -110,11 +110,11 @@ def connect_wifi(env_vars: dict[str, str]) -> bool:
         while not wlan.isconnected():
             if time.time() - start_time > timeout:
                 print("Wi-Fi connection timed out!")
-                return False
+                return None
             time.sleep(0.5)
 
     print("Connected! IP Info:", wlan.ifconfig())
-    return True
+    return wlan
 
 def sync_ntp_time():
     """Fetches the current UTC time from an NTP server and sets the internal RTC."""
