@@ -26,5 +26,5 @@
     },
     "python.terminal.activateEnvironment": false,
     "python.analysis.stubPath": "typings",
-    "python-envs.defaultEnvManager": "ms-python.python:system"
+    "python-envs.defaultEnvManager": "ms-python.python:venv"
 }
