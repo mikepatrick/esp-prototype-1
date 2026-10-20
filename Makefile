@@ -43,4 +43,4 @@ activate-nix:
 	@echo source ./.venv/bin/activate
 
 flash-firmware:
-	esptool --port COM3 --baud 460800 write_flash 0x1000 './ESP32_GENERIC-20260824-v1.29.0.bin
+	esptool --port /dev/ttyUSB0 --baud 460800 write_flash 0x1000 './ESP32_GENERIC-20260824-v1.29.0.bin'
